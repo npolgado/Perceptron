@@ -9,12 +9,6 @@ import numpy as np
 
 ROUNDING_AMOUNT = 5
 
-'''
-IF THE PERCEPTRON OUTPUT IS 
-
-'''
-
-
 class Perceptron:
     def __init__(self, weights=None, bias=20):
         """
@@ -46,17 +40,21 @@ class Perceptron:
             self.weights = weights
             self.save_path = None
 
-    def add_inputs(self, input):
-        for i in range(len(self.weights)):
-            for j in range(len(self.weights[i])):
-                self.weights[i][j] += input[i][j]
+    def add_inputs(self, input, learning_rate=1.0):
+        # for i in range(len(self.weights)):
+        #     for j in range(len(self.weights[i])):
+        #         self.weights[i][j] += input[i][j]
+        new_inputs = input * learning_rate
+        self.weights = np.add(self.weights, new_inputs)
 
-    def subtract_inputs(self, input):
-        for i in range(len(self.weights)):
-            for j in range(len(self.weights[i])):
-                self.weights[i][j] -= input[i][j]
+    def subtract_inputs(self, input, learning_rate=1.0):
+        # for i in range(len(self.weights)):
+        #     for j in range(len(self.weights[i])):
+        #         self.weights[i][j] -= input[i][j]
+        new_inputs = input * learning_rate
+        self.weights = np.subtract(self.weights, new_inputs)
 
-    def train(self, inputs, label):
+    def train(self, inputs, label, learning_rate=1.0):
         """
         Train the perceptron weights based on the given inputs and labels
         """
@@ -73,7 +71,7 @@ class Perceptron:
             else:
                 print("Output should have been False. Subtracting Image...")
                 self.wrong_guesses += 1
-                self.subtract_inputs(inputs)
+                self.subtract_inputs(inputs, learning_rate)
                 self.adjusted += 1
                 
         else:
@@ -84,7 +82,7 @@ class Perceptron:
             else:
                 print("Output should have been True. Adding Image...")
                 self.wrong_guesses += 1
-                self.add_inputs(inputs)
+                self.add_inputs(inputs, learning_rate)
                 self.adjusted += 1
 
         self.accuracy = round(float((self.correct_guesses / (self.wrong_guesses + self.correct_guesses))*100), ROUNDING_AMOUNT)
@@ -94,15 +92,28 @@ class Perceptron:
         """
         Make a prediction based on the given inputs
         """
-        output = float(0)
-        for i in range(len(inputs)):
-            for j in range(len(inputs[i])):
-                output += float(inputs[i][j] * self.weights[i][j])
+        # output = float(0)
+        # for i in range(len(inputs)):
+        #     for j in range(len(inputs[i])):
+        #         output += float(inputs[i][j] * self.weights[i][j])
         
+        # print(f"in: {np.shape(inputs)} - weight: {self.shape}")
+        # print(f"in: {type(inputs)} - weight: {type(self.weights)}")
+
+        output = np.dot(inputs, self.weights)
+        output = np.sum(output)
+        
+        # print(f"out: {np.shape(output)}")
+        # print(f"out: {type(output)}")
+        # sys.exit()
+
         print(f"{self.adjusted}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}")
         return output
 
     def save_weights(self):
+        '''
+        TODO: add error handling for file already exiting for png files
+        '''
         date = str(datetime.datetime.now().date())
         date = date.split("-")[1] + "_" + date.split("-")[2]
 
@@ -126,14 +137,14 @@ class Perceptron:
             print("creating images folder")
             os.mkdir(visuals_folder)
         
-        fig_path = os.path.join(visuals_folder, f"{date}_{int(self.accuracy)}_{self.adjusted}_render.png")
-        raw_path = os.path.join(weights_folder, f"{date}_{int(self.accuracy)}_{self.adjusted}_raw.txt")
+        fig_path = os.path.join(visuals_folder, f"{date}_RES{int(self.shape[0])}_ADJ{self.adjusted}_render.png")
+        raw_path = os.path.join(weights_folder, f"{date}_RES{int(self.shape[0])}_ADJ{self.adjusted}_raw.txt")
 
         if self.save_path:
             if os.path.exists(self.save_path):
                 weights_file_name = os.path.split(self.save_path)[1].split(".")[0]
                 raw_path = self.save_path
-                fig_path = os.path.join(visuals_folder, f"{weights_file_name}.png")
+                fig_path = os.path.join(visuals_folder, f"{weights_file_name}_render.png")
 
         plt.imshow(self.weights, cmap='viridis', vmin=min, vmax=max)
         plt.colorbar()

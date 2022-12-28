@@ -151,7 +151,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-faces/
+training/
 weights/
 haarcascade_frontalface_default.xml
 my_face/
