@@ -154,3 +154,4 @@ cython_debug/
 faces/
 weights/
 haarcascade_frontalface_default.xml
+my_face/
