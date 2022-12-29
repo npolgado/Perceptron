@@ -92,20 +92,8 @@ class Perceptron:
         """
         Make a prediction based on the given inputs
         """
-        # output = float(0)
-        # for i in range(len(inputs)):
-        #     for j in range(len(inputs[i])):
-        #         output += float(inputs[i][j] * self.weights[i][j])
-        
-        # print(f"in: {np.shape(inputs)} - weight: {self.shape}")
-        # print(f"in: {type(inputs)} - weight: {type(self.weights)}")
-
         output = np.dot(inputs, self.weights)
         output = np.sum(output)
-        
-        # print(f"out: {np.shape(output)}")
-        # print(f"out: {type(output)}")
-        # sys.exit()
 
         print(f"{self.adjusted}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}")
         return output
