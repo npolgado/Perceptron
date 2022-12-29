@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
 
 # Set the search term and number of images to download
-search_term = "face"
-num_images = 151
+search_term = "rihanna"
+num_images = 50
 
 # Set the base URL for the Google Image search
 base_url = "https://www.google.com/search?q=" + search_term + "&source=lnms&tbm=isch"
@@ -22,7 +22,7 @@ if response.status_code == 200:
     image_tags = soup.find_all("img")
 
     # Set the counter for the image names
-    counter = 51
+    counter = 0
 
     # Create a folder for the images
     if not os.path.exists(search_term):
@@ -36,7 +36,7 @@ if response.status_code == 200:
         # Check if the URL is valid
         if image_url.startswith("http"):
             # Download the image and save it to the folder
-            urlretrieve(image_url, search_term + "/test" + str(counter) + ".png")
+            urlretrieve(image_url, str(search_term + f"/{search_term}" + str(counter) + ".png"))
             counter += 1
 
             # Check if we have reached the required number of images
