@@ -30,16 +30,6 @@ class Perceptron:
         self.min_weight = 10000
         print(f"weights: {self.shape}")
 
-    def load_weights(self, weights):
-        path = filedialog.askopenfilename()
-        if os.path.exists(path):
-            self.weights = np.loadtxt(path)
-            print(self.weights)
-            self.save_path = path
-        else:
-            self.weights = weights
-            self.save_path = None
-
     def add_inputs(self, input, learning_rate=1.0):
         # for i in range(len(self.weights)):
         #     for j in range(len(self.weights[i])):
@@ -95,7 +85,7 @@ class Perceptron:
         output = np.dot(inputs, self.weights)
         output = np.sum(output)
 
-        print(f"{self.adjusted}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}")
+        print(f"{round(self.adjusted, ROUNDING_AMOUNT)}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}")
         return output
 
     def find_valid_fig_path(self, fig_path):
@@ -139,13 +129,8 @@ class Perceptron:
         date = str(datetime.datetime.now().date())
         date = date.split("-")[1] + "_" + date.split("-")[2]
 
-        max = 0
-        min = 100000
-        for i in range(len(self.weights)):
-            for j in range(len(self.weights[i])):
-                val = self.weights[i][j]
-                if val > max: max = val
-                elif val < min: min = val
+        max = self.weights.min()
+        min = self.weights.max()
         
         root = os.path.dirname(__file__)
         weights_folder = os.path.join(root, "weights")
@@ -179,3 +164,13 @@ class Perceptron:
 
         plt.savefig(fig_path)
         np.savetxt(raw_path, self.weights, fmt='%.3f')
+
+    def load_weights(self, weights):
+        path = filedialog.askopenfilename()
+        if os.path.exists(path):
+            self.weights = np.loadtxt(path)
+            print(self.weights)
+            self.save_path = path
+        else:
+            self.weights = weights
+            self.save_path = None

@@ -2,10 +2,11 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
+import time
 
 # Set the search term and number of images to download
-search_term = "rihanna"
-num_images = 50
+search_term = "faces of humans"
+num_images = 100
 
 # Set the base URL for the Google Image search
 base_url = "https://www.google.com/search?q=" + search_term + "&source=lnms&tbm=isch"
@@ -42,6 +43,9 @@ if response.status_code == 200:
             # Check if we have reached the required number of images
             if counter > num_images:
                 break
+            time.sleep(0.25)
+        else:
+            print(image_url)
 
 else:
     # Request was not successful
