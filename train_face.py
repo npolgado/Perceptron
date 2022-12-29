@@ -11,11 +11,11 @@ RESIZE_FACTOR = 1024
 SIZE_X = 1280
 SIZE_Y = 720
 TRAIN = True
-LEARNING_NO_FACE = 0.001
+LEARNING_NO_FACE = 1.0
 LEARNING_WRONG_FACE = 1.0
 LEARNING_CORRECT_FACE = 1.0
 
-TRAIN_DATASET_TIMING = 20
+TRAIN_DATASET_TIMING = 5
 TRAINING_BATCH_INTERVAL = int(TRAIN_DATASET_TIMING / 5)
 
 # Load the Haar cascade for face detection
@@ -27,7 +27,7 @@ video_capture.set(3, SIZE_X)
 video_capture.set(4, SIZE_Y)
 
 try:
-    p = Perceptron(np.zeros((RESIZE_FACTOR, RESIZE_FACTOR)))
+    p = Perceptron(np.zeros((SIZE_X, SIZE_Y)))
 
     st = time.monotonic()
     st_batch = time.monotonic()
@@ -53,6 +53,29 @@ try:
         ret, frame = video_capture.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+        if np.shape(frame) != (SIZE_X, SIZE_Y):
+            train_im = cv2.resize(
+                gray,
+                (SIZE_X, SIZE_Y),
+                interpolation=cv2.INTER_LINEAR
+            )
+            bool_guess = bool(p.predict(gray) > p.bias)
+            # p.train(gray, 1.0, learning_rate=LEARNING_CORRECT_FACE)
+        else:
+            bool_guess = bool(p.predict(gray) > p.bias)
+            # p.train(gray, 1.0, learning_rate=LEARNING_CORRECT_FACE)
+
+        vis_weights = p.weights.T
+
+        # Normalize the heatmap to the range [0, 255]
+        heatmap = cv2.normalize(vis_weights, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+
+        # Apply a colormap to the heatmap
+        colormap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+
+        result = cv2.addWeighted(frame, 0.7, colormap, 0.3, 0)
+
+        '''
         # get your frame
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         is_face = len(faces)
@@ -112,8 +135,9 @@ try:
                 st_batch = time.monotonic()
             else:
                 guess = bool(p.predict(normalized_image) > p.bias)
+        '''
 
-        cv2.imshow('Webcam', gray)
+        cv2.imshow('Webcam', result)
 
         if dt > TRAIN_DATASET_TIMING and TRAIN:
             print("\t\tSWITCHING TO IMAGE TRAINING...\n")
@@ -124,8 +148,19 @@ try:
                     for file in files:
 
                         im = cv2.imread(os.path.join(training_folder_ground, file))
-                        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-
+                        im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                        resized_image = cv2.resize(im_gray, (SIZE_X, SIZE_Y), interpolation=cv2.INTER_LINEAR)
+                        normalized_image = resized_image / 255.0
+                        
+                        faces = face_cascade.detectMultiScale(im, 1.3, 5)
+                        bool_faces = len(faces)
+                        
+                        if bool_faces:
+                            p.train(normalized_image, 0.0, learning_rate=LEARNING_WRONG_FACE)
+                        else: 
+                            p.train(normalized_image, 0.0, learning_rate=LEARNING_NO_FACE)
+                        
+                        '''
                         faces = face_cascade.detectMultiScale(im, 1.3, 5)
                         bool_faces = len(faces)
 
@@ -150,6 +185,7 @@ try:
                                     p.train(normalized_image, 0.0, learning_rate=LEARNING_WRONG_FACE)
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
+                        '''
 
             print("\t\tTRAINING ON _YOUR_FACE_")
             for root, dirs, files in os.walk(training_folder_truth):
@@ -158,8 +194,24 @@ try:
                     for file in files:
 
                         im = cv2.imread(os.path.join(training_folder_truth, file))
-                        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                        im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
+                        if np.shape(im_gray)[1] > np.shape(im_gray)[0]: 
+                            resized_image = cv2.resize(im_gray, (SIZE_X, SIZE_Y), interpolation=cv2.INTER_LINEAR)
+                        else:
+                            resized_image = cv2.resize(im_gray.T, (SIZE_X, SIZE_Y), interpolation=cv2.INTER_LINEAR)
+                        
+                        normalized_image = resized_image / 255.0
+
+                        faces = face_cascade.detectMultiScale(im, 1.3, 5)
+                        bool_faces = len(faces)
+                                                
+                        if bool_faces:
+                            p.train(normalized_image, 1.0, learning_rate=LEARNING_CORRECT_FACE)
+                        else: 
+                            p.train(normalized_image, 1.0, learning_rate=LEARNING_CORRECT_FACE)
+                        
+                        '''
                         faces = face_cascade.detectMultiScale(im, 1.3, 5)
                         bool_faces = len(faces)
 
@@ -184,6 +236,7 @@ try:
                                     p.train(normalized_image, 1.0, learning_rate=LEARNING_CORRECT_FACE)
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
+                        '''
 
             print("\t\tRESETING STATS...\n")
             p.accuracy = 0

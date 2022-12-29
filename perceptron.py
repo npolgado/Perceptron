@@ -35,6 +35,7 @@ class Perceptron:
         #     for j in range(len(self.weights[i])):
         #         self.weights[i][j] += input[i][j]
         new_inputs = input * learning_rate
+        new_inputs = new_inputs.T
         self.weights = np.add(self.weights, new_inputs)
 
     def subtract_inputs(self, input, learning_rate=1.0):
@@ -42,6 +43,7 @@ class Perceptron:
         #     for j in range(len(self.weights[i])):
         #         self.weights[i][j] -= input[i][j]
         new_inputs = input * learning_rate
+        new_inputs = new_inputs.T
         self.weights = np.subtract(self.weights, new_inputs)
 
     def train(self, inputs, label, learning_rate=1.0):
@@ -159,7 +161,7 @@ class Perceptron:
         fig_path = self.find_valid_fig_path(fig_path)
         print(fig_path)
 
-        plt.imshow(self.weights, cmap='viridis', vmin=min, vmax=max)
+        plt.imshow(self.weights.T, cmap='viridis', vmin=min, vmax=max)
         plt.colorbar()
 
         plt.savefig(fig_path)
