@@ -28,7 +28,7 @@ class Perceptron:
 
         self.max_weight = 0
         self.min_weight = 10000
-        print(f"weights: {self.shape}")
+        print(f"weights: {self.shape}\n")
 
     def add_inputs(self, input, learning_rate=1.0):
         # for i in range(len(self.weights)):
@@ -59,7 +59,7 @@ class Perceptron:
             if bool_prediction == bool(label):
                 self.correct_guesses += 1
             else:
-                print("Output should have been False. Subtracting Image...")
+                print(f"Output should have been False. Subtracting {learning_rate} * Image...")
                 self.wrong_guesses += (1 * learning_rate)
                 self.subtract_inputs(inputs, learning_rate)
                 self.adjusted += (1 * learning_rate)
@@ -70,7 +70,7 @@ class Perceptron:
             if bool_prediction == bool(label):
                 self.correct_guesses += 1
             else:
-                print("Output should have been True. Adding Image...")
+                print(f"Output should have been True. Adding {learning_rate} * Image...")
                 self.wrong_guesses += (1 * learning_rate)
                 self.add_inputs(inputs, learning_rate)
                 self.adjusted += (1 * learning_rate)
@@ -85,7 +85,7 @@ class Perceptron:
         output = np.dot(inputs, self.weights)
         output = np.sum(output)
 
-        print(f"{round(self.adjusted, ROUNDING_AMOUNT)}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}")
+        print(f"\r{round(self.adjusted, ROUNDING_AMOUNT)}\t| +: {self.accuracy} %\t| -: {self.loss} %\t| {round(output, ROUNDING_AMOUNT)}\t| {bool(output > self.bias)}", end="\r")
         return output
 
     def find_valid_fig_path(self, fig_path):

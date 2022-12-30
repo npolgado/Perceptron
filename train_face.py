@@ -8,14 +8,19 @@ import numpy as np
 from perceptron import *
 
 RESIZE_FACTOR = 1024
-SIZE_X = 1280
-SIZE_Y = 720
+
+SIZE_X = 640
+SIZE_Y = 480
+
 TRAIN = True
-LEARNING_NO_FACE = 0.001
+
+LEARNING_NO_FACE = 0.0
 LEARNING_WRONG_FACE = 1.0
 LEARNING_CORRECT_FACE = 1.0
 
-TRAIN_DATASET_TIMING = 20
+SHOW_WEIGHTS = False
+
+TRAIN_DATASET_TIMING = 60
 TRAINING_BATCH_INTERVAL = int(TRAIN_DATASET_TIMING / 5)
 
 # Load the Haar cascade for face detection
@@ -39,9 +44,9 @@ try:
     training_folder_ground = os.path.join(training_folder, "ground")
     training_folder_truth = os.path.join(training_folder, "truth")
     
-    num_incorrect_passes = 1
+    num_incorrect_passes = 5
     num_webcam_passes = 1
-    num_truth_passes = 1
+    num_truth_passes = 5
 
     all_facial_images = []
     
@@ -82,7 +87,7 @@ try:
                 # add to bulk array
                 all_facial_images.append(normalized_image)
                 
-                if TRAIN:
+                if SHOW_WEIGHTS:
                     # add weights to gray frame
                     vis_weights = np.array(p.weights)
 
@@ -92,7 +97,7 @@ try:
 
                     # Map the values in the array to the range 0 to 255
                     mapped_data = np.interp(vis_weights, (min_val, max_val), (0, 255))
-                    
+
                     # Resize to face on frame
                     vis = cv2.resize(
                         mapped_data,
@@ -105,19 +110,25 @@ try:
 
             if dt_batch > TRAINING_BATCH_INTERVAL and TRAIN:
                 for i in range(num_webcam_passes):
+                    
                     np.random.shuffle(all_facial_images)
+                    
                     for j in all_facial_images:
                         p.train(j, 1.0, learning_rate=LEARNING_CORRECT_FACE)
+                
                 all_facial_images = []
                 st_batch = time.monotonic()
+            
             else:
                 guess = bool(p.predict(normalized_image) > p.bias)
 
-        cv2.imshow('Webcam', gray)
-
+        if SHOW_WEIGHTS:
+            cv2.imshow('Webcam', gray)
+        else:
+            cv2.imshow('Webcam', frame)
         if dt > TRAIN_DATASET_TIMING and TRAIN:
-            print("\t\tSWITCHING TO IMAGE TRAINING...\n")
-            print("\t\tTRAINING ON _NOT_YOUR_FACE_")
+            print("\n\t\tSWITCHING TO IMAGE TRAINING...\n")
+            print("\n\t\tTRAINING ON _NOT_YOUR_FACE_\n")
             for root, dirs, files in os.walk(training_folder_ground):
                 for i in range(num_incorrect_passes):
                     np.random.shuffle(files)
@@ -151,7 +162,7 @@ try:
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
 
-            print("\t\tTRAINING ON _YOUR_FACE_")
+            print("\n\t\tTRAINING ON _YOUR_FACE_\n")
             for root, dirs, files in os.walk(training_folder_truth):
                 for i in range(num_truth_passes):
                     np.random.shuffle(files)
@@ -185,12 +196,12 @@ try:
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
 
-            print("\t\tRESETING STATS...\n")
+            print("\n\t\tRESETING STATS...\n")
             p.accuracy = 0
             p.correct_guesses = 0
             p.wrong_guesses = 0
             st = time.monotonic()
-            print("\t\tSWITCHING TO LEARNING MODE, SMILE :)")
+            print("\n\t\tSWITCHING TO LEARNING MODE, SMILE :)\n")
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
