@@ -9,9 +9,6 @@ from perceptron import *
 
 RESIZE_FACTOR = 1024
 
-SIZE_X = 640
-SIZE_Y = 480
-
 TRAIN = True
 
 LEARNING_NO_FACE = 0.0
@@ -20,16 +17,23 @@ LEARNING_CORRECT_FACE = 1.0
 
 SHOW_WEIGHTS = False
 
-TRAIN_DATASET_TIMING = 60
-TRAINING_BATCH_INTERVAL = int(TRAIN_DATASET_TIMING / 5)
+TRAIN_DATASET_TIMING = 10
+TRAINING_BATCH_INTERVAL = int(TRAIN_DATASET_TIMING / 2)
 
 # Load the Haar cascade for face detection
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Load webcam
 video_capture = cv2.VideoCapture(0)
-video_capture.set(3, SIZE_X)
-video_capture.set(4, SIZE_Y)
+video_capture.set(3, RESIZE_FACTOR)
+video_capture.set(4, RESIZE_FACTOR)
+
+def close_training():
+    global p, video_capture
+    p.save_weights()
+    video_capture.release()
+    cv2.destroyAllWindows()
+    sys.exit()
 
 try:
     p = Perceptron(np.zeros((RESIZE_FACTOR, RESIZE_FACTOR)))
@@ -44,9 +48,9 @@ try:
     training_folder_ground = os.path.join(training_folder, "ground")
     training_folder_truth = os.path.join(training_folder, "truth")
     
-    num_incorrect_passes = 5
+    num_incorrect_passes = 1
     num_webcam_passes = 1
-    num_truth_passes = 5
+    num_truth_passes = 3
 
     all_facial_images = []
     
@@ -59,7 +63,8 @@ try:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # get your frame
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        faces = face_cascade.detectMultiScale(image=gray, scaleFactor=1.05, minNeighbors=5, minSize=(200,200))
+        # face_cascade.detectMultiScale(image=gray, scaleFactor=1.05, minNeighbors=5, minSize=(100,100))
         is_face = len(faces)
 
         if not is_face:
@@ -121,11 +126,10 @@ try:
             
             else:
                 guess = bool(p.predict(normalized_image) > p.bias)
+            
 
-        if SHOW_WEIGHTS:
-            cv2.imshow('Webcam', gray)
-        else:
-            cv2.imshow('Webcam', frame)
+        cv2.imshow('Webcam', gray)
+        
         if dt > TRAIN_DATASET_TIMING and TRAIN:
             print("\n\t\tSWITCHING TO IMAGE TRAINING...\n")
             print("\n\t\tTRAINING ON _NOT_YOUR_FACE_\n")
@@ -135,13 +139,13 @@ try:
                     for file in files:
 
                         im = cv2.imread(os.path.join(training_folder_ground, file))
-                        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-                        faces = face_cascade.detectMultiScale(im, 1.3, 5)
+                        faces = face_cascade.detectMultiScale(image=gray, scaleFactor=1.05, minNeighbors=5, minSize=(200,200))
                         bool_faces = len(faces)
 
                         if not bool_faces:
-                            resized_image = cv2.resize(im, (RESIZE_FACTOR, RESIZE_FACTOR))
+                            resized_image = cv2.resize(gray, (RESIZE_FACTOR, RESIZE_FACTOR))
                             normalized_image = resized_image / 255.0
                             p.predict(normalized_image)
 
@@ -149,10 +153,15 @@ try:
                                 p.train(normalized_image, 0.0, learning_rate=LEARNING_NO_FACE)
                             else: 
                                 guess = bool(p.predict(normalized_image) > p.bias)
-                        
+                            
+                            cv2.imshow('Webcam', normalized_image)
+                            key = cv2.waitKey(1) & 0xFF
+                            if key == ord('q'):
+                                close_training()
+
                         else:
                             for (x, y, w, h) in faces:
-                                face = im[y:y+h, x:x+w]
+                                face = gray[y:y+h, x:x+w]
 
                                 resized_image = cv2.resize(face, (RESIZE_FACTOR, RESIZE_FACTOR))
                                 normalized_image = resized_image / 255.0
@@ -162,6 +171,11 @@ try:
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
 
+                            cv2.imshow('Webcam', normalized_image)
+                            key = cv2.waitKey(1) & 0xFF
+                            if key == ord('q'):
+                                close_training()
+
             print("\n\t\tTRAINING ON _YOUR_FACE_\n")
             for root, dirs, files in os.walk(training_folder_truth):
                 for i in range(num_truth_passes):
@@ -169,13 +183,13 @@ try:
                     for file in files:
 
                         im = cv2.imread(os.path.join(training_folder_truth, file))
-                        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-                        faces = face_cascade.detectMultiScale(im, 1.3, 5)
+                        faces = face_cascade.detectMultiScale(image=gray, scaleFactor=1.05, minNeighbors=5, minSize=(200,200))
                         bool_faces = len(faces)
 
                         if not bool_faces:
-                            resized_image = cv2.resize(im, (RESIZE_FACTOR, RESIZE_FACTOR))
+                            resized_image = cv2.resize(gray, (RESIZE_FACTOR, RESIZE_FACTOR))
                             normalized_image = resized_image / 255.0
                             p.predict(normalized_image)
                         
@@ -183,10 +197,15 @@ try:
                                 p.train(normalized_image, 0.0, learning_rate=LEARNING_NO_FACE)
                             else: 
                                 guess = bool(p.predict(normalized_image) > p.bias)
-                        
+
+                            cv2.imshow('Webcam', normalized_image)
+                            key = cv2.waitKey(1) & 0xFF
+                            if key == ord('q'):
+                                close_training()
+
                         else:
                             for (x, y, w, h) in faces:
-                                face = im[y:y+h, x:x+w]
+                                face = gray[y:y+h, x:x+w]
 
                                 resized_image = cv2.resize(face, (RESIZE_FACTOR, RESIZE_FACTOR))
                                 normalized_image = resized_image / 255.0
@@ -195,6 +214,11 @@ try:
                                     p.train(normalized_image, 1.0, learning_rate=LEARNING_CORRECT_FACE)
                                 else: 
                                     guess = bool(p.predict(normalized_image) > p.bias)
+                                
+                                cv2.imshow('Webcam', normalized_image)
+                                key = cv2.waitKey(1) & 0xFF
+                                if key == ord('q'):
+                                    close_training()
 
             print("\n\t\tRESETING STATS...\n")
             p.accuracy = 0
@@ -205,13 +229,7 @@ try:
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
-            print("exiting")
-            p.save_weights()
-            video_capture.release()
-            cv2.destroyAllWindows()
+            close_training()
 
 except KeyboardInterrupt:
-    print("exiting")
-    p.save_weights()
-    video_capture.release()
-    cv2.destroyAllWindows()
+    close_training()

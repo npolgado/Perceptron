@@ -59,7 +59,7 @@ class Perceptron:
             if bool_prediction == bool(label):
                 self.correct_guesses += 1
             else:
-                print(f"Output should have been False. Subtracting {learning_rate} * Image...")
+                # print(f"Output should have been False. Subtracting {learning_rate} * Image...")
                 self.wrong_guesses += (1 * learning_rate)
                 self.subtract_inputs(inputs, learning_rate)
                 self.adjusted += (1 * learning_rate)
@@ -70,12 +70,18 @@ class Perceptron:
             if bool_prediction == bool(label):
                 self.correct_guesses += 1
             else:
-                print(f"Output should have been True. Adding {learning_rate} * Image...")
+                # print(f"Output should have been True. Adding {learning_rate} * Image...")
                 self.wrong_guesses += (1 * learning_rate)
                 self.add_inputs(inputs, learning_rate)
                 self.adjusted += (1 * learning_rate)
-
-        self.accuracy = round(float((self.correct_guesses / (self.wrong_guesses + self.correct_guesses))*100), ROUNDING_AMOUNT)
+        
+        if self.adjusted == 0:
+            self.accuracy = 0.0
+        elif (self.correct_guesses + self.wrong_guesses) <= 0:
+            self.accuracy = 0.0
+        else:
+            self.accuracy = round(float((self.correct_guesses / (self.wrong_guesses + self.correct_guesses))*100), ROUNDING_AMOUNT)
+        
         self.loss = round(float(100 - self.accuracy), ROUNDING_AMOUNT)
             
     def predict(self, inputs):
